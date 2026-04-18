@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\EncryptedFiles;
+use Illuminate\Support\Facades\Crypt;
 
 class FileController
 {
@@ -29,25 +30,29 @@ class FileController
 
         $originalName = $file->getClientOriginalName();
 
-        // base name + extension split
         $baseName = pathinfo($originalName, PATHINFO_FILENAME);
         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
 
-        // initial name choice
         $name = $request->input('name', $originalName);
 
-        // check duplicates in DB
-        $existingCount = EncryptedFiles::where('name', 'like', $baseName . '%')
-            ->count();
-
-        if ($existingCount > 0) {
-            $name = $baseName . ' (' . ($existingCount + 1) . ')';
-            if ($extension) {
-                $name .= '.' . $extension;
-            }
+        // checks if name exists to add ++
+        $counter = 1;
+        while (EncryptedFiles::where('name', $name)->exists()) {
+            $name = $baseName . " ($counter)" . ($extension ? ".$extension" : '');
+            $counter++;
         }
 
-        $path = $file->store('uploads', 'local');
+        // Encrypt file content
+        $fileContent = file_get_contents($file->getRealPath());
+        $encryptedContent = Crypt::encryptString($fileContent);
+
+        // generate random storage filename
+        $storedName = uniqid() . '.enc';
+
+        $path = 'uploads/' . $storedName;
+
+        // store encrypted file
+        Storage::disk('local')->put($path, $encryptedContent);
 
         $savedFile = EncryptedFiles::create([
             'fs_name' => $path,
@@ -56,7 +61,7 @@ class FileController
         ]);
 
         return response()->json([
-            'message' => 'File uploaded successfully',
+            'message' => 'File uploaded and encrypted successfully',
             'file' => $savedFile
         ]);
     }
@@ -68,22 +73,23 @@ class FileController
 
         if (!$file) {
             return response()->json([
-                'message' => 'File not found in database'
-            ], 404);
-        }
-
-        $path = $file->fs_name;
-
-        if (!Storage::disk('local')->exists($path)) {
-            return response()->json([
                 'message' => 'File not found'
             ], 404);
         }
 
-        return response()->download(
-            Storage::disk('local')->path($path),
-            $file->name
-        );
+        if (!Storage::disk('local')->exists($file->fs_name)) {
+            return response()->json([
+                'message' => 'File not found on disk'
+            ], 404);
+        }
+
+        $encryptedContent = Storage::disk('local')->get($file->fs_name);
+
+        $decryptedContent = Crypt::decryptString($encryptedContent);
+
+        return response($decryptedContent, 200)
+            ->header('Content-Type', 'application/octet-stream')
+            ->header('Content-Disposition', 'attachment; filename="'.$file->name.'"');
     }
     
 }
