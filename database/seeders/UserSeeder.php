@@ -2,43 +2,33 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        DB::table('users')->insert([
-            [
-                'name' => 'user1',
-                'email' => 'user1@test.com',
-                'password' => Hash::make('123456'),
-                'created_at' => now(),
-                'updated_at' => now(),
-                'permission' => 1,
-            ],
-            [
-                'name' => 'user2',
-                'email' => 'user2@test.com',
-                'password' => Hash::make('123456'),
-                'created_at' => now(),
-                'updated_at' => now(),
-                'permission' => 2,
-            ],
-            [
-                'name' => 'user3',
-                'email' => 'user3@test.com',
-                'password' => Hash::make('123456'),
-                'created_at' => now(),
-                'updated_at' => now(),
-                'permission' => 3,
-            ],
+        $user1 = User::create([
+            'name' => 'user1',
+            'email' => 'user1@test.com',
+            'password' => Hash::make('123456'),
         ]);
+        $user1->assignRole('admin');
+
+        $user2 = User::create([
+            'name' => 'user2',
+            'email' => 'user2@test.com',
+            'password' => Hash::make('123456'),
+        ]);
+        $user2->assignRole('manager');
+
+        $user3 = User::create([
+            'name' => 'user3',
+            'email' => 'user3@test.com',
+            'password' => Hash::make('123456'),
+        ]);
+        $user3->assignRole('user');
     }
 }
