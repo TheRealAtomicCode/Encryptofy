@@ -7,7 +7,6 @@
 
       <div class="flex gap-3 items-center">
 
-
         <input
           v-if="auth.hasRole('admin')"
           v-model="customName"
@@ -25,7 +24,7 @@
 
         <button
           v-if="auth.hasRole('admin')"
-          :disabled="!selectedFile"
+          :disabled="!selectedFile || uploading"
           @click="uploadFile"
           class="bg-green-600 px-4 py-2 rounded disabled:opacity-50"
         >
@@ -40,6 +39,11 @@
         />
 
       </div>
+    </div>
+
+    <!-- ERROR -->
+    <div v-if="errorMessage" class="mb-4 text-red-400">
+      {{ errorMessage }}
     </div>
 
     <!-- FILE LIST -->
@@ -94,6 +98,9 @@ const fileInput = ref(null)
 const selectedFile = ref(null)
 const customName = ref("")
 const uploading = ref(false)
+const errorMessage = ref("")
+
+const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
 /* =========================
    LOAD FILES
@@ -103,49 +110,70 @@ const loadFiles = async () => {
   files.value = res.data.files
 }
 
+/* =========================
+   FILE SELECT
+========================= */
+const handleFileSelect = (e) => {
+  const file = e.target.files[0]
 
+  errorMessage.value = ""
+
+  if (!file) {
+    selectedFile.value = null
+    return
+  }
+
+  if (file.size > MAX_SIZE) {
+    errorMessage.value = "File is too large. Maximum allowed size is 2MB."
+    selectedFile.value = null
+    fileInput.value.value = null
+    return
+  }
+
+  selectedFile.value = file
+}
+
+/* =========================
+   UPLOAD
+========================= */
 const triggerUpload = () => {
   fileInput.value.click()
 }
 
-const handleFileSelect = (e) => {
-  selectedFile.value = e.target.files[0] || null
-}
-
-
 const uploadFile = async () => {
   if (!selectedFile.value) return
+
+  errorMessage.value = ""
 
   const formData = new FormData()
   formData.append("file", selectedFile.value)
 
-  formData.append(
-    "name",
-    customName.value.trim() !== "" ? customName.value : null
-  )
+  const name = customName.value.trim()
+  if (name !== "") {
+    formData.append("name", name)
+  }
 
   uploading.value = true
-console.log(formData)
+
   try {
-    await api.post("/files", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    })
+    await api.post("/files", formData)
 
     selectedFile.value = null
     customName.value = ""
 
     await loadFiles()
   } catch (err) {
-    console.error(err)
+    errorMessage.value =
+      err.response?.data?.message || "Upload failed"
   } finally {
     uploading.value = false
     fileInput.value.value = null
   }
 }
 
-
+/* =========================
+   DOWNLOAD
+========================= */
 const downloadFile = async (id, filename) => {
   const res = await api.get(`/files/${id}`, {
     responseType: "blob",
@@ -164,13 +192,9 @@ const downloadFile = async (id, filename) => {
   window.URL.revokeObjectURL(url)
 }
 
-
-const logout = () => {
-  auth.logout()
-  router.push("/login")
-}
-
-
+/* =========================
+   INIT
+========================= */
 onMounted(() => {
   loadFiles()
 })

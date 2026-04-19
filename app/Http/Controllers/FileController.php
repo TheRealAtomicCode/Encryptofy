@@ -22,8 +22,10 @@ class FileController
     public function store(Request $request)
     {
         $request->validate([
-            'file' => 'required|file',
+            'file' => 'required|file|max:2048', // 2MB (KB)
             'name' => 'nullable|string'
+        ], [
+            'file.max' => 'File too large. Maximum allowed size is 2MB.'
         ]);
 
         $file = $request->file('file');
@@ -35,23 +37,18 @@ class FileController
 
         $name = $request->input('name', $originalName);
 
-        // checks if name exists to add ++
         $counter = 1;
         while (EncryptedFiles::where('name', $name)->exists()) {
             $name = $baseName . " ($counter)" . ($extension ? ".$extension" : '');
             $counter++;
         }
 
-        // Encrypt file content
         $fileContent = file_get_contents($file->getRealPath());
         $encryptedContent = Crypt::encryptString($fileContent);
 
-        // generate random storage filename
         $storedName = uniqid() . '.enc';
-
         $path = 'uploads/' . $storedName;
 
-        // store encrypted file
         Storage::disk('local')->put($path, $encryptedContent);
 
         $savedFile = EncryptedFiles::create([

@@ -11,7 +11,8 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
         }),
-        inertia(),
+        // removed to dtop ssr
+      //  inertia(),
         tailwindcss(),
         vue({
             template: {
