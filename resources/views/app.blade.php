@@ -1,4 +1,24 @@
+
+
+
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryptofy</title>
+    @vite('resources/js/app.js')
+    @vite('resources/css/app.css')
+</head>
+<body class="bg-gray-950">
+    <div id="app"></div>
+</body>
+</html>
+
+
+{{-- OLD CODE MIGHT NEED LATER --}}
+
+{{-- <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
@@ -19,4 +39,4 @@
     <body class="font-sans antialiased">
         <x-inertia::app />
     </body>
-</html>
+</html> --}}

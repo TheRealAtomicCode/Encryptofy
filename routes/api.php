@@ -21,18 +21,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/files', [FileController::class, 'store'])
         ->middleware('role:admin');
 
+    Route::get('/me', [AuthController::class, 'me']);
 });
 
-   Route::post('/login', [AuthController::class, 'login']);
+
+Route::post('/login', [AuthController::class, 'login']);
 
 
-   Route::get('/me', function () {
-    return [
-        'authenticated' => auth()->check(),
-        'user' => auth()->user(),
-        'session_id' => session()->getId(),
-    ];
-});
+
+
+
+
+
 
 // unprotected routes
 

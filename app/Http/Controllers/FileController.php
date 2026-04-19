@@ -57,7 +57,7 @@ class FileController
         $savedFile = EncryptedFiles::create([
             'fs_name' => $path,
             'name' => $name,
-            'added_by' => 1
+            'added_by' => auth()->id(),
         ]);
 
         return response()->json([
